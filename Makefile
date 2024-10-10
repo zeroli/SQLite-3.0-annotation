@@ -15,26 +15,26 @@
 # The toplevel directory of the source tree.  This is the directory
 # that contains this "Makefile.in" and the "configure.in" script.
 #
-TOP = @srcdir@
+TOP = .
 
 # C Compiler and options for use in building executables that
 # will run on the platform that is doing the build.
 #
-BCC = @BUILD_CC@ @BUILD_CFLAGS@
+BCC = gcc -g -O0
 
 # C Compile and options for use in building executables that 
 # will run on the target platform.  (BCC and TCC are usually the
 # same unless your are cross-compiling.)
 #
-TCC = @TARGET_CC@ @TARGET_CFLAGS@ -I. -I${TOP}/src
+TCC = gcc -g -O0 -DOS_UNIX=0 -DOS_WIN=1 -DHAVE_USLEEP=1 -I. -I${TOP}/src
 
 # Some standard variables and programs
 #
-prefix = @prefix@
-exec_prefix = @exec_prefix@
-INSTALL = @INSTALL@
+prefix = /usr/local
+exec_prefix = ${prefix}
+INSTALL = /usr/bin/install -c
 LIBTOOL = ./libtool
-RELEASE = @ALLOWRELEASE@
+RELEASE = 
 
 # libtool compile/link/install
 LTCOMPILE = $(LIBTOOL) --mode=compile $(TCC)
@@ -43,25 +43,25 @@ LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
 
 # Compiler options needed for programs that use the TCL library.
 #
-TCL_FLAGS = @TARGET_TCL_INC@
+TCL_FLAGS = 
 
 # The library that programs using TCL must link against.
 #
-LIBTCL = @TARGET_TCL_LIBS@
+LIBTCL = -ltcl  
 
 # Compiler options needed for programs that use the readline() library.
 #
-READLINE_FLAGS = -DHAVE_READLINE=@TARGET_HAVE_READLINE@ @TARGET_READLINE_INC@
+READLINE_FLAGS = -DHAVE_READLINE=0 
 
 # The library that programs using readline() must link against.
 #
-LIBREADLINE = @TARGET_READLINE_LIBS@
+LIBREADLINE = -lreadline -lncurses 
 
 # Should the database engine assume text is coded as UTF-8 or iso8859?
 #
 # ENCODING  = UTF8
 # ENCODING  = ISO8859
-ENCODING = @ENCODING@
+ENCODING = ISO8859
 
 # Flags controlling use of the in memory btree implementation
 #
@@ -72,8 +72,8 @@ ENCODING = @ENCODING@
 # default to file, 2 to default to memory, and 3 to force temporary
 # tables to always be in memory.
 #
-INMEMORYDB = @INMEMORYDB@
-INCOREFLAGS = -DTEMP_STORE=@TEMP_STORE@
+INMEMORYDB = 1
+INCOREFLAGS = -DTEMP_STORE=1
 
 ifeq (${INMEMORYDB},0)
 INCOREFLAGS += -DSQLITE_OMIT_INMEMORYDB=1
@@ -182,7 +182,7 @@ VDBEHDR = \
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	sqlite3.h libsqlite3.la sqlite3@TARGET_EXEEXT@
+all:	sqlite3.h libsqlite3.la sqlite3.exe
 
 Makefile: $(TOP)/Makefile.in
 	./config.status
@@ -195,15 +195,15 @@ last_change:	$(SRC)
           | awk '{print $$5,$$6}' >last_change
 
 libsqlite3.la:	$(LIBOBJ)
-	$(LTLINK) -o libsqlite3.la $(LIBOBJ) ${RELEASE} -rpath @exec_prefix@/lib \
+	$(LTLINK) -o libsqlite3.la $(LIBOBJ) ${RELEASE} -rpath ${prefix}/lib \
 		-version-info "8:6:8"
 
 libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
 	$(LTLINK) -o libtclsqlite3.la tclsqlite.lo \
-		libsqlite3.la $(LIBTCL) -rpath @exec_prefix@/lib/sqlite \
+		libsqlite3.la $(LIBTCL) -rpath ${prefix}/lib/sqlite \
 		-version-info "8:6:8"
 
-sqlite3@TARGET_EXEEXT@:	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
+sqlite3.exe:	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
 	$(LTLINK) $(READLINE_FLAGS) -o sqlite3 $(TOP)/src/shell.c \
 		libsqlite3.la $(LIBREADLINE)
 
@@ -222,7 +222,7 @@ target_source:	$(SRC) $(VDBEHDR)
 
 # Rules to build the LEMON compiler generator
 #
-lemon@BUILD_EXEEXT@:	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
+lemon.exe:	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 	$(BCC) -o lemon $(TOP)/tool/lemon.c
 	cp $(TOP)/tool/lempar.c .
 
@@ -384,15 +384,15 @@ tclsqlite3:	tclsqlite-sh.lo libsqlite3.la
 	$(LTLINK) $(TCL_FLAGS) -o tclsqlite3 tclsqlite-sh.lo \
 		 libsqlite3.la $(LIBTCL)
 
-testfixture@TARGET_EXEEXT@:	$(TOP)/src/tclsqlite.c libtclsqlite3.la libsqlite3.la $(TESTSRC)
+testfixture.exe:	$(TOP)/src/tclsqlite.c libtclsqlite3.la libsqlite3.la $(TESTSRC)
 	$(LTLINK) $(TCL_FLAGS) -DTCLSH=1 -DSQLITE_TEST=1\
                 -o testfixture $(TESTSRC) $(TOP)/src/tclsqlite.c \
 		libtclsqlite3.la libsqlite3.la $(LIBTCL)
 
-fulltest:	testfixture@TARGET_EXEEXT@ sqlite@TARGET_EXEEXT@
+fulltest:	testfixture.exe sqlite.exe
 	./testfixture $(TOP)/test/all.test
 
-test:	testfixture@TARGET_EXEEXT@ sqlite@TARGET_EXEEXT@
+test:	testfixture.exe sqlite.exe
 	./testfixture $(TOP)/test/quick.test
 
 
@@ -553,13 +553,13 @@ install:	sqlite3 libsqlite3.la sqlite3.h
 	$(INSTALL) -m 0644 sqlite.pc $(DESTDIR)$(exec_prefix)/lib/pkgconfig; 
 
 clean:	
-	rm -f *.lo *.la *.o sqlite3@TARGET_EXEEXT@ libsqlite3.la
+	rm -f *.lo *.la *.o sqlite3.exe libsqlite3.la
 	rm -f sqlite3.h opcodes.*
 	rm -rf .libs .deps 
-	rm -f lemon@BUILD_EXEEXT@ lempar.c parse.* sqlite*.tar.gz
+	rm -f lemon.exe lempar.c parse.* sqlite*.tar.gz
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out
-	rm -f testfixture@TARGET_EXEEXT@ test.db
+	rm -f testfixture.exe test.db
 	rm -rf doc
 	rm -f sqlite.dll sqlite.lib
 

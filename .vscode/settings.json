@@ -1,0 +1,7 @@
+{
+    "iis.configDir": "",
+    "files.associations": {
+        "*.cu": "cpp",
+        "tcl.h": "c"
+    }
+}

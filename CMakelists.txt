@@ -1,0 +1,43 @@
+cmake_minimum_required(VERSION 3.17)
+
+project(sqlite-3)
+
+add_compile_options(-DOS_UNIX=0 -DOS_WIN=1 -DHAVE_USLEEP=1)
+add_compile_options(-I${CMAKE_SOURCE_DIR} -I./ -Isrc/)
+add_executable(sqlite-3-shell
+    opcodes.c
+    parse.c
+    src/attach.c
+    src/auth.c
+    src/btree.c
+    src/build.c
+    src/date.c
+    src/delete.c
+    src/encode.c
+    src/expr.c
+    src/func.c
+    src/hash.c
+    src/insert.c
+    src/legacy.c
+    src/main.c
+    src/os_win.c
+    src/pager.c
+    src/pragma.c
+    src/printf.c
+    src/random.c
+    src/select.c
+    src/shell.c
+    src/table.c
+    src/tokenize.c
+    src/trigger.c
+    src/update.c
+    src/utf.c
+    src/util.c
+    src/util.c
+    src/vacuum.c
+    src/vdbe.c
+    src/vdbeapi.c
+    src/vdbeaux.c
+    src/vdbemem.c
+    src/where.c
+    )
